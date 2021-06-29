@@ -20,15 +20,26 @@ namespace DotNetInterview
 
             // TODO: Register ApiServer, RegistryService, and SoftwareReporter
             // in the ServiceCollection.
-
+            serviceCollection.AddTransient<ISoftwareReporter, SoftwareReporter>();
+            serviceCollection.AddTransient<IApiService, ApiService>();
+            serviceCollection.AddTransient<ISoftwareReporter, SoftwareReporter>();
+            
             var container = serviceCollection.BuildServiceProvider();
-
 
             // TODO: Retrieve an instance of SoftwareReporter from the
             // dependency injection container.
+            var reporter = container.GetService<ISoftwareReporter>();
 
             // TODO: Call ReportSoftwareInstallationStatus method, using "Syncro"
             // as the software name.
+            if (reporter != null)
+            {
+                await reporter.ReportSoftwareInstallationStatus("Syncro");
+            }
+            else
+            {
+                throw new ArgumentNullException(nameof(reporter));
+            }
 
             Console.WriteLine("\nPress any key to exit.");
             Console.ReadKey();
