@@ -14,12 +14,25 @@ namespace DotNetInterview
 
     public class SoftwareReporter : ISoftwareReporter
     {
-        // TODO: Finish implementing this class so the unit tests
-        // in SoftwareReporterTests are passing.
+        private readonly IRegistryService _registryService;
+        private readonly IApiService _apiService;
+        private readonly ILogger<SoftwareReporter> _logger;
 
-        public Task ReportSoftwareInstallationStatus(string softwareName)
+        public SoftwareReporter(IRegistryService registryService, IApiService apiService, ILogger<SoftwareReporter> logger)
         {
-            throw new NotImplementedException();
+            _registryService = registryService;
+            _apiService = apiService;
+            _logger = logger;
+        }
+
+        public async Task ReportSoftwareInstallationStatus(string softwareName)
+        {
+            if (string.IsNullOrWhiteSpace(softwareName))
+            {
+                throw new ArgumentNullException(nameof(softwareName));
+            }            
+            var isInstalled = _registryService.CheckIfInstalled(softwareName);
+            await _apiService.SendInstalledSoftware(softwareName, isInstalled);
         }
     }
 }

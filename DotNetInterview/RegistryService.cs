@@ -3,8 +3,7 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using StringExtensions;
 
 namespace DotNetInterview
 {
@@ -24,42 +23,57 @@ namespace DotNetInterview
 
         public bool CheckIfInstalled(string softwareName)
         {
-            // TODO: Implement this method to check if the given software name
-            // can be found as an installed application in the Windows registry.
-
             // The search should be case insensitive and should
             // include partial matches.
             
-            // NOTE : If this full path is possible, opening the subkeys one at a time is not necessary.
-            // Registry.LocalMachine.OpenSubKey("SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\")
-
-            return GetInstalledApplications()
-                .Any(item => softwareName.Equals(item, StringComparison.OrdinalIgnoreCase));
+            if (softwareName == null)
+            {
+                throw new ArgumentNullException(nameof(softwareName));
+            }
+            
+            return GetInstalledApplications().Any(item => item.Contains(softwareName, StringComparison.OrdinalIgnoreCase));
         }
 
         private IEnumerable<string> GetInstalledApplications()
         {
-            // Computer\HKEY_LOCAL_MACHINE\SOFTWARE\            Microsoft\Windows\CurrentVersion\Uninstall\
-            // Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\
-            
-            // I think I need to open each subkey individually and not go direct to it with the full path.
-            using (var software = Registry.LocalMachine.OpenSubKey("SOFTWARE"))
+            var uninstallKeyPath =
+                @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
+            var wow64UninstallKeyPath =
+                @"SOFTWARE\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\";
+
+            foreach (var applicationName in GetApplicationNames(uninstallKeyPath))
             {
-                var uninstallNode = GetUninstallNodeSoftware(software);
-                using(var wow64Node = software.OpenSubKey("Wow6432Node"))
-                {
-                    var uninstallNode6432 = GetUninstallNodeSoftware(wow64Node);
-                }
+                yield return applicationName;
+            }
+
+            foreach (var applicationName in GetApplicationNames(wow64UninstallKeyPath))
+            {
+                yield return applicationName;
             }
         }
 
-        private RegistryKey GetUninstallNodeSoftware(RegistryKey software)
+        private static IEnumerable<string> GetApplicationNames(string uninstallKeyPath)
         {
-            using(var microsoft = software.OpenSubKey("Microsoft"))
+            using (var uninstallKey = Registry.LocalMachine.OpenSubKey(uninstallKeyPath))
             {
-                    
+                if (uninstallKey != null)
+                {
+                    foreach (var guid in uninstallKey.GetSubKeyNames())
+                    {
+                        using (var guidKey = uninstallKey.OpenSubKey(guid))
+                        {
+                            if (guidKey != null)
+                            {
+                                var val = guidKey.GetValue("DisplayName");
+                                if (val is String appName)
+                                {
+                                    yield return appName;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
-        
     }
 }

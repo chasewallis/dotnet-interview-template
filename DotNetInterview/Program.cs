@@ -18,20 +18,16 @@ namespace DotNetInterview
                 builder.AddConsole();
             });
 
-            // TODO: Register ApiServer, RegistryService, and SoftwareReporter
-            // in the ServiceCollection.
+            // NOTE: I decided to go with Transient here. Since this is not an ASP.Net app, Scope  doesn't make sense,
+            // Singleton is an option, but I tend to prefer transient unless there is a reason to use singleton. 
             serviceCollection.AddTransient<ISoftwareReporter, SoftwareReporter>();
             serviceCollection.AddTransient<IApiService, ApiService>();
             serviceCollection.AddTransient<ISoftwareReporter, SoftwareReporter>();
             
             var container = serviceCollection.BuildServiceProvider();
 
-            // TODO: Retrieve an instance of SoftwareReporter from the
-            // dependency injection container.
             var reporter = container.GetService<ISoftwareReporter>();
 
-            // TODO: Call ReportSoftwareInstallationStatus method, using "Syncro"
-            // as the software name.
             if (reporter != null)
             {
                 await reporter.ReportSoftwareInstallationStatus("Syncro");
